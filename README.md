@@ -1,18 +1,18 @@
 # Inception-of-things-42sp
-Study on Kubernetes delivered to you by means of Vagrant and Kubernetes.
+Study on orchestration inside container clusters delivered to you by means of Kubernetes and Vagrant.
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Requirements](#requirements)
 3. [Installation](#installation)
 4. [Usage](#usage)
-5. [Contributing](#contributing)
-6. [Exercises](#exercises)
 
 # Introduction
-This project consists of a series of exercises in virtualization with increasing complexity. There are 3 exercises in total, and they are meant to be implemented inside a Virtual Machine using **Vagrant** and **Kubernetes**.
+This project comprises a series of exercises in virtualization and container orchestration, progressively increasing in complexity. The exercises — three in total — are designed to be implemented within a Virtual Machine using **Vagrant** and **Kubernetes**.
 
-In this project we need to start virtual machines, create kubernetes clusters, deploy applications (sometimes with replicas) in these clusters and interact with the internet outside the VM. All sources of dependencies or configurations are pulled from external repositories such as **Dockerhub** and **Github**, and run on Kubernetes clusters set up either by Kubernetes itself or its lightweight flavours: **K3s** and **K3d**.
+The goals of this project include launching virtual machines, creating Kubernetes clusters, deploying applications (some with multiple replicas) in these clusters, and enabling external internet access. All dependencies and configurations are sourced from external repositories, such as Docker Hub and GitHub. The clusters are setup and managed either by Kubernetes itself or its lightweight distributions, **K3s** and **K3d**.
+
+### Key concepts
 
 > **Vagrant** is an open-source tool that helps you create and manage virtualized development environments. It simplifies the setup process by providing a consistent environment across different machines, making it easier to share your development environment with team members.
 
@@ -20,27 +20,38 @@ In this project we need to start virtual machines, create kubernetes clusters, d
 
 > **K3s** is a lightweight Kubernetes distribution designed for resource-constrained environments and edge computing, simplifying the deployment of Kubernetes clusters.
 
-> K3d is a utility for running K3s in Docker, enabling the quick creation and management of K3s clusters in local development environments.
+> **K3d** is a utility for running K3s in Docker, enabling the quick creation and management of K3s clusters in local development environments.
 
 ### Exercises
-The following exercises take place inside one hosting Virtual Machine:
-- ex00 - set up 2 VMs (managed by Vagrant), both with K3s installed (each in different modes: controller and agent).
-- ex01 - 1 VM (managed by Vagrant), K3s installed (server mode). Inside K3s, there must be 3 web applications, one of which must have 3 replicas.
-- ex02 - install Docker and K3d on the host VM, setup a Kubernetes cluster and deploy ArgoCD watching an external Github repo configurations and pulling from a Dockerhub image to deploy an application inside the cluster.
+All exercises are carried out within a single hosting Virtual Machine (VM).
+
+#### 1. Set up a Multi-Node K3s Cluster
+- Configure **2 VMs** managed by Vagrant, installing **K3s** on each.
+- Assign one VM as the *controller* and the other as an *agent*.
+
+#### 2. Deploy Multiple Applications on a Single-Node K3s Cluster
+- Configure **1 VM** managed by Vagrant and install K3s in *server mode*.
+- Within the cluster, deploy **3 web applications** — one of which should have **3 replicas**.
+
+#### 3. Implement ArgoCD in a K3d Cluster
+- Install **Docker** and **K3d**, then set up a K3d cluster.
+- Deploy an **ArgoCD** server that monitors an external configuration repository on GitHub.
+- The server should deploy an application within the cluster, pulling its artifacts from a **Docker Hub** image.
 
 # Installation
-As mentioned, this project runs inside a Virtual Machine. In order to see project running (or even implement your own!), you will need to install a VM under certain specifications to make sure this project behaves the same across multiple OS's and deployment contexts. Bellow we provide a guide for setting up said VM in the bat of an eye.
+As mentioned, all exercises in this project are meant to run inside a Virtual Machine. You will need to install a VM under certain specifications to make sure this project behaves the same across multiple OS's and deployment contexts. Bellow we provide a guide for setting up said VM in the bat of an eye.
 
-# Requirements
+## Requirements
 
 - [VirtualBox](https://www.virtualbox.org/) installed and configured.
 - A valid Ubuntu ISO file. **[TBD]**
+- `host-vm-manage.sh`, the VM installation helper we provide along with this project.
 
 ## host-vm-manage.sh
 
-This script allows you to create, rebuild, and delete an Ubuntu virtual machine using `VBoxManage` (VirtualBox's CLI), to host the project. It automates the process of setting up a virtual machine with specified resources, attaching an Ubuntu ISO, and managing the VM lifecycle.
+This script allows you to create, rebuild, and delete an Ubuntu virtual machine using `VBoxManage` to host the project. It automates the process of setting up a virtual machine with specified resources, attaching an Ubuntu ISO, and managing the VM lifecycle.
 
-# Usage
+## Usage
 
 ```bash
 ./host-vm-manage.sh {create|rebuild|delete} [ISO_PATH]
