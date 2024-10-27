@@ -3,60 +3,55 @@
 # Variables (change these as needed)
 VM_NAME="inception-of-things"
 VM_FOLDER="$HOME/VirtualBox VMs/$VM_NAME"
-HDD_PATH="$VM_FOLDER/$VM_NAME.vdi"
-HDD_SIZE=10000    # HDD size in MB (20GB)
+OVA_URL="https://cloud-images.ubuntu.com/oracular/current/oracular-server-cloudimg-amd64.ova"  # Update this URL
+OVA_PATH="$VM_FOLDER/oracular-server-cloudimg-amd64.ova"       # Path to save the OVA
+HDD_SIZE=10000    # HDD size in MB (10GB)
 RAM_SIZE=2000     # RAM size in MB (2GB)
 VRAM_SIZE=128     # Video memory in MB
 CPUS=2            # Number of CPU cores
 
-# Function to check if the ISO exists
-check_iso() {
-	ISO_PATH=$1
-	if [ ! -f "$ISO_PATH" ]; then
-		echo "Error: ISO file '$ISO_PATH' does not exist."
-		exit 1
+# Function to check if the OVA exists
+check_ova() {
+	if [ ! -f "$OVA_PATH" ]; then
+		echo "OVA file '$OVA_PATH' does not exist. Downloading..."
+		download_ova
 	fi
 }
 
-# Function to create the VM
-create_vm() {
-	ISO_PATH=$1
+# Function to download the OVA
+download_ova() {
+	# Create VM folder if it doesn't exist
+	mkdir -p "$VM_FOLDER"
 
-	if [ -z "$ISO_PATH" ]; then
-		echo "ISO path is required to create the VM."
+	# Download the OVA file
+	wget -O "$OVA_PATH" "$OVA_URL"
+
+	if [ $? -ne 0 ]; then
+		echo "Error: Failed to download OVA from '$OVA_URL'."
 		exit 1
 	fi
 
-	# Check if the ISO file exists
-	check_iso "$ISO_PATH"
+	echo "Downloaded OVA file to '$OVA_PATH'."
+}
+
+# Function to create or start the VM
+create_vm() {
+	check_ova
 
 	# Check if VM already exists
 	if VBoxManage showvminfo "$VM_NAME" &>/dev/null; then
-		echo "VM '$VM_NAME' already exists."
-		exit 1
+		echo "VM '$VM_NAME' already exists. Starting the existing VM..."
+		VBoxManage startvm "$VM_NAME" --type gui
+		exit 0
 	fi
 
-	echo "Creating virtual machine '$VM_NAME'..."
+	echo "Importing OVA file '$OVA_PATH'..."
 
-	# Create VM
-	VBoxManage createvm --name "$VM_NAME" --ostype Ubuntu_64 --register
+	# Import the OVA
+	VBoxManage import "$OVA_PATH" --vsys 0 --vmname "$VM_NAME"
 
-	# Modify VM settings
+	# Modify VM settings (if necessary)
 	VBoxManage modifyvm "$VM_NAME" --cpus "$CPUS" --memory "$RAM_SIZE" --vram "$VRAM_SIZE" --nic1 nat
-
-	# Create a virtual hard disk
-	VBoxManage createhd --filename "$HDD_PATH" --size "$HDD_SIZE"
-
-	# Set up the storage controller
-	VBoxManage storagectl "$VM_NAME" --name "SATA Controller" --add sata --controller IntelAhci
-	VBoxManage storageattach "$VM_NAME" --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "$HDD_PATH"
-
-	# Attach the Ubuntu ISO
-	VBoxManage storagectl "$VM_NAME" --name "IDE Controller" --add ide
-	VBoxManage storageattach "$VM_NAME" --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium "$ISO_PATH"
-
-	# Configure boot order
-	VBoxManage modifyvm "$VM_NAME" --boot1 dvd --boot2 disk --boot3 none --boot4 none
 
 	# Start the VM
 	VBoxManage startvm "$VM_NAME" --type gui
@@ -81,34 +76,24 @@ delete_vm() {
 rebuild_vm() {
 	echo "Rebuilding virtual machine '$VM_NAME'..."
 	delete_vm
-	create_vm "$1"
+	create_vm
 }
 
 # Script usage instructions
 usage() {
-	echo "Usage: $0 {create|rebuild|delete} [ISO_PATH]"
-	echo "  create  - Create a new VM (requires ISO_PATH)"
-	echo "  rebuild - Rebuild the VM (requires ISO_PATH)"
+	echo "Usage: $0 {create|rebuild|delete}"
+	echo "  create  - Create a new VM from OVA or start existing VM"
+	echo "  rebuild - Rebuild the VM from OVA"
 	echo "  delete  - Delete the VM"
 }
 
 # Main script logic
 case "$1" in
 	create)
-		if [ -z "$2" ]; then
-			echo "ISO path is required for create."
-			usage
-			exit 1
-		fi
-		create_vm "$2"
+		create_vm
 		;;
 	rebuild)
-		if [ -z "$2" ]; then
-			echo "ISO path is required for rebuild."
-			usage
-			exit 1
-		fi
-		rebuild_vm "$2"
+		rebuild_vm
 		;;
 	delete)
 		delete_vm
