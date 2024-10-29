@@ -9,6 +9,7 @@ HDD_SIZE=10000    # HDD size in MB (10GB)
 RAM_SIZE=2000     # RAM size in MB (2GB)
 VRAM_SIZE=128     # Video memory in MB
 CPUS=2            # Number of CPU cores
+PRESEED_ISO="./host-pre-seeding/my-seed.iso"  # Path to the preseed ISO file
 
 # Function to check if the OVA exists
 check_ova() {
@@ -52,6 +53,14 @@ create_vm() {
 
 	# Modify VM settings (if necessary)
 	VBoxManage modifyvm "$VM_NAME" --cpus "$CPUS" --memory "$RAM_SIZE" --vram "$VRAM_SIZE" --nic1 nat
+
+	# Attach preseed ISO
+	if [ -f "$PRESEED_ISO" ]; then
+		echo "Attaching preseed ISO '$PRESEED_ISO'..."
+		VBoxManage storageattach "$VM_NAME" --storagectl "IDE" --port 1 --device 0 --type dvddrive --medium "$PRESEED_ISO"
+	else
+		echo "Preseed ISO '$PRESEED_ISO' not found. Please make sure the file exists."
+	fi
 
 	# Start the VM
 	VBoxManage startvm "$VM_NAME" --type gui
