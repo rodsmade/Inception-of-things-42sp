@@ -52,14 +52,13 @@ detect_vboxmanage() {
 				echo "Error: VBoxManage not found. Please install VirtualBox or add VBoxManage to your PATH."
 				exit 1
 		fi
+
+	echo "Using VBoxManage command: $VBOXMANAGE"
 }
 
 # Function to create or start the VM
 create_vm() {
 	check_ova
-	detect_vboxmanage
-
-	echo "Using VBoxManage command: $VBOXMANAGE"
 
 	# Check if VM already exists
 	if $VBOXMANAGE showvminfo "$VM_NAME" &>/dev/null; then
@@ -94,13 +93,22 @@ create_vm() {
 delete_vm() {
 	echo "Deleting virtual machine '$VM_NAME'..."
 
-	# Power off the VM if running
-	$VBOXMANAGE controlvm "$VM_NAME" poweroff &>/dev/null
+	# Power off the VM if running and handle errors
+	if $VBOXMANAGE controlvm "$VM_NAME" poweroff &>/dev/null; then
+		# Sleep for a few seconds to ensure the VM is fully powered off
+		sleep 2
+		echo "Successfully powered off '$VM_NAME'."
+	else
+		echo "Warn: Failed to power off '$VM_NAME'. It may not be running."
+	fi
 
 	# Unregister and delete the VM and associated files
-	$VBOXMANAGE unregistervm "$VM_NAME" --delete
-
-	echo "Virtual machine '$VM_NAME' deleted."
+	if $VBOXMANAGE unregistervm "$VM_NAME" --delete; then
+		echo "Virtual machine '$VM_NAME' deleted."
+	else
+		echo "Error: Failed to delete '$VM_NAME'. It may not exist or have been corrupted."
+		return 1  # Exit the function with a non-zero status
+	fi
 }
 
 # Function to rebuild the VM
@@ -119,6 +127,8 @@ usage() {
 }
 
 # Main script logic
+detect_vboxmanage
+
 case "$1" in
 	create)
 		create_vm
