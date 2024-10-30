@@ -35,35 +35,57 @@ download_ova() {
 	echo "Downloaded OVA file to '$OVA_PATH'."
 }
 
+# Detects platform and assigns correct VBoxManage command
+detect_vboxmanage() {
+		if command -v VBoxManage &>/dev/null; then
+				VBOXMANAGE="VBoxManage"
+		elif command -v VBoxManage.exe &>/dev/null; then
+				VBOXMANAGE="VBoxManage.exe"
+		elif [[ "$(uname -r)" == *"Microsoft"* ]]; then
+				# Fallback for WSL if VBoxManage.exe isn't in PATH but might be in the Windows system
+				VBOXMANAGE="/mnt/c/Program Files/Oracle/VirtualBox/VBoxManage.exe"
+				if [[ ! -f "$VBOXMANAGE" ]]; then
+						echo "Error: VBoxManage.exe not found in PATH or default Windows install location."
+						exit 1
+				fi
+		else
+				echo "Error: VBoxManage not found. Please install VirtualBox or add VBoxManage to your PATH."
+				exit 1
+		fi
+}
+
 # Function to create or start the VM
 create_vm() {
 	check_ova
+	detect_vboxmanage
+
+	echo "Using VBoxManage command: $VBOXMANAGE"
 
 	# Check if VM already exists
-	if VBoxManage showvminfo "$VM_NAME" &>/dev/null; then
+	if $VBOXMANAGE showvminfo "$VM_NAME" &>/dev/null; then
 		echo "VM '$VM_NAME' already exists. Starting the existing VM..."
-		VBoxManage startvm "$VM_NAME" --type gui
+		$VBOXMANAGE startvm "$VM_NAME" --type gui
 		exit 0
 	fi
 
 	echo "Importing OVA file '$OVA_PATH'..."
 
 	# Import the OVA
-	VBoxManage import "$OVA_PATH" --vsys 0 --vmname "$VM_NAME"
+	$VBOXMANAGE import "$OVA_PATH" --vsys 0 --vmname "$VM_NAME"
 
 	# Modify VM settings (if necessary)
-	VBoxManage modifyvm "$VM_NAME" --cpus "$CPUS" --memory "$RAM_SIZE" --vram "$VRAM_SIZE" --nic1 nat
+	$VBOXMANAGE modifyvm "$VM_NAME" --cpus "$CPUS" --memory "$RAM_SIZE" --vram "$VRAM_SIZE" --nic1 nat
 
 	# Attach preseed ISO
 	if [ -f "$PRESEED_ISO" ]; then
 		echo "Attaching preseed ISO '$PRESEED_ISO'..."
-		VBoxManage storageattach "$VM_NAME" --storagectl "IDE" --port 1 --device 0 --type dvddrive --medium "$PRESEED_ISO"
+		$VBOXMANAGE storageattach "$VM_NAME" --storagectl "IDE" --port 1 --device 0 --type dvddrive --medium "$PRESEED_ISO"
 	else
 		echo "Preseed ISO '$PRESEED_ISO' not found. Please make sure the file exists."
 	fi
 
 	# Start the VM
-	VBoxManage startvm "$VM_NAME" --type gui
+	$VBOXMANAGE startvm "$VM_NAME" --type gui
 
 	echo "Virtual machine '$VM_NAME' created and started."
 }
@@ -73,10 +95,10 @@ delete_vm() {
 	echo "Deleting virtual machine '$VM_NAME'..."
 
 	# Power off the VM if running
-	VBoxManage controlvm "$VM_NAME" poweroff &>/dev/null
+	$VBOXMANAGE controlvm "$VM_NAME" poweroff &>/dev/null
 
 	# Unregister and delete the VM and associated files
-	VBoxManage unregistervm "$VM_NAME" --delete
+	$VBOXMANAGE unregistervm "$VM_NAME" --delete
 
 	echo "Virtual machine '$VM_NAME' deleted."
 }
