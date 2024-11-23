@@ -1,6 +1,12 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "hashicorp/bionic64"
-  config.vm.provision :shell, path: "bootstrap.sh"
-  config.vm.network :forwarded_port, guest: 80, host: 4567 # port forwarding to be able to access apache server from host into guest machine
-  config.vbguest.auto_update = false  # Ignores version check for Guest Additions
+  config.vm.provision :shell, path: "bootstrap.sh"          # Provisioning script (runs upon vm first boot)
+  config.vm.network :forwarded_port, guest: 80, host: 4567  # port forwarding to be able to access apache server from host into guest machine
+  config.vbguest.auto_update = false                        # Ignores version check for Guest Additions
+
+  # Set resources for VirtualBox (RAM and CPU)
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "512"  # 512MB of RAM
+    vb.cpus = 1        # 1 CPU
+  end
 end
