@@ -19,5 +19,5 @@ Vagrant.configure("2") do |config|
   end
 
   # Miscellaneous
-  config.vbguest.auto_update = false  # Ignores version check for Guest Additions
+  # config.vbguest.auto_update = false  # Ignores version check for Guest Additions
 end
