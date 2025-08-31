@@ -1,7 +1,6 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
   config.vm.box_version = "20241002.0.0"
-  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "1024"
@@ -11,6 +10,13 @@ Vagrant.configure("2") do |config|
   config.vm.define "roaraujoS" do |s|
     s.vm.hostname = "roaraujoS"
     s.vm.network "private_network", ip: "192.168.56.110"
+
+    # Sync folder to retrieve artifacts
+    s.vm.synced_folder "./k3s_artifacts", "/vagrant/k3s_artifacts", create: true
+
+    # Provision k3s in server mode via external script
+    s.vm.provision "shell", path: "scripts/setup-server.sh"
+
   end
 
   config.vm.define "roaraujoSW" do |sw|
