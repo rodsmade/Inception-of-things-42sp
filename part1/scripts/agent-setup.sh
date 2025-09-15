@@ -6,7 +6,11 @@ AGENT_IP="192.168.56.111"
 TOKEN="12345"
 
 # Wait for server API to be ready
-until curl -sf https://${SERVER_IP}:6443/healthz >/dev/null 2>&1; do
+# until curl -sf https://${SERVER_IP}:6443/healthz >/dev/null 2>&1; do
+#     echo "Waiting for K3s server at ${SERVER_IP}:6443..."
+#     sleep 5
+# done
+until curl -sk -o /dev/null -w "%{http_code}" https://${SERVER_IP}:6443/healthz | grep -qE "200|401"; do
     echo "Waiting for K3s server at ${SERVER_IP}:6443..."
     sleep 5
 done
